@@ -12,16 +12,22 @@ __diag_push();
 __diag_ignore_all("-Wmissing-prototypes",
                   "Global kfuncs as their definitions will be in BTF");
 
-struct task_struct *bpf_find_get_task_by_vpid(pid_t nr) {
-  printk(KERN_ALERT "Hello in bpf_find_get_task_by_vpid!\n");
+__bpf_kfunc int bpf_hello(int id) {
+  printk(KERN_ALERT "hello from eBPF (id=%d)", id);
   return 0;
-  // return find_get_task_by_vpid(nr);
+}
+__bpf_kfunc int bpf_hello_const(int id__k) {
+  printk(KERN_ALERT "hello_const from eBPF (id=%d)", id__k);
+  return 0;
 }
 
 __diag_pop();
 
 BTF_SET8_START(bpf_task_set)
+BTF_ID_FLAGS(func, bpf_hello)
+BTF_ID_FLAGS(func, bpf_hello_const)
 BTF_SET8_END(bpf_task_set)
+
 
 static const struct btf_kfunc_id_set bpf_task_kfunc_set = {
     .owner = THIS_MODULE,
@@ -29,9 +35,9 @@ static const struct btf_kfunc_id_set bpf_task_kfunc_set = {
 };
 
 static int mymodule_init(void) {
-  printk(KERN_ALERT "Hello world!\n");
-  return register_btf_kfunc_id_set(BPF_PROG_TYPE_TRACING, &bpf_task_kfunc_set);
-  return 0;
+  printk(KERN_ALERT "hello in mymodule_init()\n");
+  return register_btf_kfunc_id_set(BPF_PROG_TYPE_UNSPEC, &bpf_task_kfunc_set);
+  // return register_btf_kfunc_id_set(BPF_PROG_TYPE_TRACING, &bpf_task_kfunc_set);
 }
 
 static void mymodule_exit(void) { 
